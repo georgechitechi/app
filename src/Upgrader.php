@@ -13,9 +13,6 @@ class Upgrader
     private $targetPath;
     private $ci4Version = '4.4.3'; // Latest stable version
     private $modelMap = []; // Add modelMap property
-    private $progressBar;
-    private $totalSteps = 12; // Total number of migration steps
-    private $currentStep = 0;
 
     // Common CI3 to CI4 method name mappings
     private $methodMappings = [
@@ -58,69 +55,24 @@ class Upgrader
         $this->targetPath = $this->sourcePath . '_ci4' . uniqid();
     }
 
-    private function updateProgress(string $message): void
-    {
-        $this->currentStep++;
-        $percentage = (int) round(($this->currentStep / $this->totalSteps) * 100);
-        $barWidth = 50;
-        $progressWidth = (int) round(($percentage / 100) * $barWidth);
-
-        echo sprintf(
-            "\r[%s>%s] %d%% %s",
-            str_repeat("=", $progressWidth),
-            str_repeat(" ", $barWidth - $progressWidth),
-            $percentage,
-            $message
-        );
-
-        if ($this->currentStep === $this->totalSteps) {
-            echo "\n";
-        }
-    }
-
     public function upgrade(): void
     {
         try {
             // Disable error reporting for specific warnings
             error_reporting(E_ALL & ~E_WARNING);
 
-            $this->updateProgress("Validating source...");
             $this->validateSource();
-
-            $this->updateProgress("Creating backup...");
             $this->createBackup();
-
-            $this->updateProgress("Downloading and setting up CI4...");
             $this->downloadAndSetupCI4();
-
-            $this->updateProgress("Migrating controllers...");
             $this->migrateControllers();
-
-            $this->updateProgress("Migrating models...");
             $this->migrateModels();
-
-            $this->updateProgress("Migrating views...");
             $this->migrateViews();
-
-            $this->updateProgress("Migrating config files...");
             $this->migrateConfig();
-
-            $this->updateProgress("Migrating routes...");
             $this->migrateRoutes();
-
-            $this->updateProgress("Migrating helpers...");
             $this->migrateHelpers();
-
-            $this->updateProgress("Migrating libraries...");
             $this->migrateLibraries();
-
-            $this->updateProgress("Creating namespaces...");
             $this->createNamespaces();
-
-            $this->updateProgress("Updating composer.json...");
             $this->updateComposerJson();
-
-            $this->updateProgress("Setting up environment...");
             $this->setupEnvironment();
 
             // Restore error reporting
