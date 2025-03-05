@@ -5,7 +5,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use GeorgeChitechi\Upgrader\Upgrader;
@@ -18,24 +18,29 @@ class UpgradeCommand extends Command
     {
         $this
             ->setDescription('Upgrade a CodeIgniter 3 project to CodeIgniter 4')
-            ->addArgument(
+            ->addOption(
                 'path',
-                InputArgument::REQUIRED,
-                'Path to the CodeIgniter 3 project'
+                'p',
+                InputOption::VALUE_OPTIONAL,
+                'Path to the CodeIgniter 3 project (defaults to current directory)',
+                getcwd()
             );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $path = $input->getArgument('path');
+        $path = $input->getOption('path');
 
         try {
             $output->writeln('<info>Starting upgrade process...</info>');
+            $output->writeln(sprintf('<info>Source path: %s</info>', $path));
 
             $upgrader = new Upgrader($path);
             $upgrader->upgrade();
 
             $output->writeln('<info>Upgrade completed successfully!</info>');
+            $output->writeln('<info>Your CI3 project has been backed up and upgraded to CI4.</info>');
+            $output->writeln('<info>Please check the _ci4 directory for your upgraded project.</info>');
             return Command::SUCCESS;
         } catch (\Exception $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
