@@ -23,12 +23,17 @@ The upgrader will:
 2. Create a backup of your entire project
 3. Download the latest CI4 and set it up
 4. Migrate all your code to CI4 format
-5. Place the upgraded project in a new `_ci4` directory
+5. Place the upgraded project in a new directory
+
+
+```bash
+vendor/bin/ci-upgrade upgrade
+```
 
 If you want to upgrade a different CI3 project, you can specify the path:
 
 ```bash
-vendor/bin/ci-upgrade --path=/path/to/other/ci3/project
+vendor/bin/ci-upgrade upgrade --path=/path/to/other/ci3/project
 ```
 
 ## What Gets Upgraded
@@ -80,7 +85,8 @@ The upgrader handles the following aspects of the migration:
 
 ## After Upgrade
 
-Your upgraded project will be in a new directory named `_ci4` next to your current project. The original project will remain untouched, and a backup will be created with the suffix `_backup_YYYY-MM-DD_HH-ii-ss`.
+Your upgraded project will be in a new directory next to your current project. 
+The original project will remain untouched, and a backup will be created with the suffix `_backup_YYYY-MM-DD_HH-ii-ss`.
 
 ## Important Notes
 
@@ -112,7 +118,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Author
 
-George Chitechi <georgechitechi@gmail.com>
+George Chitechi
 
 ## License
 
