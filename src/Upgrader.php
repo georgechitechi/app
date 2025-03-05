@@ -13,6 +13,9 @@ class Upgrader
     private $targetPath;
     private $ci4Version = '4.4.3'; // Latest stable version
     private $modelMap = []; // Add modelMap property
+    private $progressBar;
+    private $totalSteps = 12; // Total number of migration steps
+    private $currentStep = 0;
 
     // Common CI3 to CI4 method name mappings
     private $methodMappings = [
@@ -55,21 +58,79 @@ class Upgrader
         $this->targetPath = $this->sourcePath . '_ci4' . uniqid();
     }
 
+    private function updateProgress(string $message): void
+    {
+        $this->currentStep++;
+        $percentage = round(($this->currentStep / $this->totalSteps) * 100);
+        echo sprintf(
+            "\r[%s>%s] %d%% %s",
+            str_repeat("=", $percentage / 2),
+            str_repeat(" ", 50 - ($percentage / 2)),
+            $percentage,
+            $message
+        );
+        if ($this->currentStep === $this->totalSteps) {
+            echo "\n";
+        }
+    }
+
     public function upgrade(): void
     {
-        $this->validateSource();
-        $this->createBackup();
-        $this->downloadAndSetupCI4();
-        $this->migrateControllers();
-        $this->migrateModels();
-        $this->migrateViews();
-        $this->migrateConfig();
-        $this->migrateRoutes();
-        $this->migrateHelpers();
-        $this->migrateLibraries();
-        $this->createNamespaces();
-        $this->updateComposerJson();
-        $this->setupEnvironment();
+        try {
+            // Disable error reporting for specific warnings
+            error_reporting(E_ALL & ~E_WARNING);
+
+            $this->updateProgress("Validating source...");
+            $this->validateSource();
+
+            $this->updateProgress("Creating backup...");
+            $this->createBackup();
+
+            $this->updateProgress("Downloading and setting up CI4...");
+            $this->downloadAndSetupCI4();
+
+            $this->updateProgress("Migrating controllers...");
+            $this->migrateControllers();
+
+            $this->updateProgress("Migrating models...");
+            $this->migrateModels();
+
+            $this->updateProgress("Migrating views...");
+            $this->migrateViews();
+
+            $this->updateProgress("Migrating config files...");
+            $this->migrateConfig();
+
+            $this->updateProgress("Migrating routes...");
+            $this->migrateRoutes();
+
+            $this->updateProgress("Migrating helpers...");
+            $this->migrateHelpers();
+
+            $this->updateProgress("Migrating libraries...");
+            $this->migrateLibraries();
+
+            $this->updateProgress("Creating namespaces...");
+            $this->createNamespaces();
+
+            $this->updateProgress("Updating composer.json...");
+            $this->updateComposerJson();
+
+            $this->updateProgress("Setting up environment...");
+            $this->setupEnvironment();
+
+            // Restore error reporting
+            error_reporting(E_ALL);
+
+            echo "\nMigration completed successfully! Your new CI4 project is at: {$this->targetPath}\n";
+        } catch (\Exception $e) {
+            echo "\nError during migration: " . $e->getMessage() . "\n";
+            // Clean up if needed
+            if (file_exists($this->targetPath)) {
+                $this->filesystem->remove($this->targetPath);
+            }
+            throw $e;
+        }
     }
 
     private function validateSource(): void
@@ -154,16 +215,17 @@ class Upgrader
         // Update database settings from CI3
         $ci3DbConfig = $this->sourcePath . '/application/config/database.php';
         if (file_exists($ci3DbConfig)) {
-            // Save current error reporting level
-            $errorReporting = error_reporting();
-            // Temporarily disable warnings
-            error_reporting(E_ALL & ~E_WARNING);
+            // Create a temporary file with modified content
+            $tempConfig = "<?php\n" . preg_replace('/defined\(.*?\)\s*OR\s*exit\([^\)]+\);/', '', file_get_contents($ci3DbConfig));
+            $tempFile = tempnam(sys_get_temp_dir(), 'ci3_db_config');
+            file_put_contents($tempFile, $tempConfig);
 
-            // Include the database config file
-            include $ci3DbConfig;
+            // Include the temporary file
+            $db = [];
+            include $tempFile;
 
-            // Restore error reporting
-            error_reporting($errorReporting);
+            // Clean up
+            unlink($tempFile);
 
             if (isset($db['default'])) {
                 $envContent = preg_replace(
@@ -625,7 +687,9 @@ EOT;
 
     private function convertConfigToClass(string $content, string $className): string
     {
-        // Basic conversion - this would need to be more sophisticated in a real implementation
+        // Remove the direct script access check
+        $content = preg_replace('/defined\(.*?\)\s*OR\s*exit\([^\)]+\);/', '', $content);
+
         $template = "<?php\n\nnamespace Config;\n\nuse CodeIgniter\Config\BaseConfig;\n\nclass $className extends BaseConfig\n{\n";
 
         // Extract variables from the config array
