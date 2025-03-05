@@ -51,7 +51,7 @@ class Upgrader
         $this->filesystem = new Filesystem();
         $this->sourcePath = rtrim($sourcePath, '/');
         $this->backupPath = $this->sourcePath . '_backup_' . date('Y-m-d_H-i-s');
-        $this->targetPath = $this->sourcePath . '_ci4';
+        $this->targetPath = $this->sourcePath . '_ci4' . uniqid();
     }
 
     public function upgrade(): void
@@ -203,14 +203,37 @@ class Upgrader
         foreach ($finder as $file) {
             $content = $file->getContents();
 
+            // Remove CI3 direct script access check
+            $content = preg_replace(
+                '/defined\(\'BASEPATH\'\) OR exit\(\'No direct script access allowed\'\);/',
+                '',
+                $content
+            );
+
             // Add namespace
             $content = $this->addNamespace('App\Controllers', $content);
+
+            // Add use statements
+            $content = $this->addUseStatement($content, 'CodeIgniter\Controller');
 
             // Update class extension
             $content = str_replace('extends CI_Controller', 'extends BaseController', $content);
 
             // Update method visibility
             $content = preg_replace('/function\s+/', 'public function ', $content);
+
+            // Update model references to use new names
+            if (isset($this->modelMap)) {
+                foreach ($this->modelMap as $oldName => $newName) {
+                    // Update model loading
+                    $content = preg_replace(
+                        '/\$this->load->model\([\'"]' . preg_quote($oldName, '/') . '[\'"]\);/',
+                        'use App\\Models\\' . $newName . ';' . PHP_EOL .
+                        '        $this->' . strtolower($newName) . ' = new ' . $newName . '();',
+                        $content
+                    );
+                }
+            }
 
             // Update CI3 syntax to CI4
             $content = $this->updateCI3Syntax($content);
@@ -355,14 +378,39 @@ EOT;
         $finder = new Finder();
         $finder->files()->in($this->sourcePath . '/application/models')->name('*.php');
 
+        $modelMap = []; // Store old name to new name mapping
+
         foreach ($finder as $file) {
             $content = $file->getContents();
+            $oldFilename = $file->getFilename();
+            $className = pathinfo($oldFilename, PATHINFO_FILENAME);
+
+            // Remove CI3 direct script access check
+            $content = preg_replace(
+                '/defined\(\'BASEPATH\'\) OR exit\(\'No direct script access allowed\'\);/',
+                '',
+                $content
+            );
+
+            // Convert model name to CI4 convention (UserModel instead of User_model)
+            $newClassName = $this->convertToCI4ModelName($className);
+            $newFilename = $newClassName . '.php';
+
+            // Store the mapping for later use in controllers
+            $modelMap[$className] = $newClassName;
 
             // Add namespace
             $content = $this->addNamespace('App\Models', $content);
 
-            // Update class extension
-            $content = str_replace('extends CI_Model', 'extends Model', $content);
+            // Update class name
+            $content = preg_replace(
+                '/class\s+' . $className . '\s+extends\s+CI_Model/',
+                'class ' . $newClassName . ' extends Model',
+                $content
+            );
+
+            // Add use statement for Model class
+            $content = $this->addUseStatement($content, 'CodeIgniter\Model');
 
             // Update method visibility
             $content = preg_replace('/function\s+/', 'public function ', $content);
@@ -374,9 +422,45 @@ EOT;
             $content = $this->updateDatabaseQueries($content);
 
             // Save to new location
-            $targetFile = $this->targetPath . '/app/Models/' . $file->getFilename();
+            $targetFile = $this->targetPath . '/app/Models/' . $newFilename;
             $this->filesystem->dumpFile($targetFile, $content);
         }
+
+        // Store model mapping for use in controller updates
+        $this->modelMap = $modelMap;
+    }
+
+    private function convertToCI4ModelName(string $className): string
+    {
+        // Remove _model suffix if exists
+        $name = preg_replace('/_model$/', '', strtolower($className));
+
+        // Convert snake_case to CamelCase
+        $name = str_replace(' ', '', ucwords(str_replace('_', ' ', $name)));
+
+        // Add Model suffix
+        return $name . 'Model';
+    }
+
+    private function addUseStatement(string $content, string $class): string
+    {
+        $lines = explode("\n", $content);
+
+        // Find the namespace line
+        $namespaceIndex = -1;
+        foreach ($lines as $i => $line) {
+            if (strpos($line, 'namespace ') === 0) {
+                $namespaceIndex = $i;
+                break;
+            }
+        }
+
+        // Add use statement after namespace
+        if ($namespaceIndex !== -1) {
+            array_splice($lines, $namespaceIndex + 1, 0, ['', 'use ' . $class . ';']);
+        }
+
+        return implode("\n", $lines);
     }
 
     private function addModelProperties(string $content): string
@@ -537,6 +621,13 @@ EOT;
         foreach ($finder as $file) {
             $content = $file->getContents();
 
+            // Remove CI3 direct script access check
+            $content = preg_replace(
+                '/defined\(\'BASEPATH\'\) OR exit\(\'No direct script access allowed\'\);/',
+                '',
+                $content
+            );
+
             // Convert helper functions to be namespaced
             $content = $this->addNamespace('App\Helpers', $content);
 
@@ -552,6 +643,13 @@ EOT;
 
         foreach ($finder as $file) {
             $content = $file->getContents();
+
+            // Remove CI3 direct script access check
+            $content = preg_replace(
+                '/defined\(\'BASEPATH\'\) OR exit\(\'No direct script access allowed\'\);/',
+                '',
+                $content
+            );
 
             // Convert library classes to be namespaced
             $content = $this->addNamespace('App\Libraries', $content);
