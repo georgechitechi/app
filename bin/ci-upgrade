@@ -51,7 +51,6 @@ class UpgradeCommand extends Command
 
             $output->writeln('<info>Upgrade completed successfully!</info>');
             $output->writeln('<info>Your CI3 project has been backed up and upgraded to CI4.</info>');
-            $output->writeln('<info>Please check the _ci4 directory for your upgraded project.</info>');
             return Command::SUCCESS;
         } catch (\Exception $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
