@@ -61,26 +61,52 @@ class Upgrader
             // Disable error reporting for specific warnings
             error_reporting(E_ALL & ~E_WARNING);
 
+            echo "Step 1/13: Validating source structure...\n";
             $this->validateSource();
+
+            echo "Step 2/13: Creating backup...\n";
             $this->createBackup();
+
+            echo "Step 3/13: Downloading and setting up CodeIgniter 4...\n";
             $this->downloadAndSetupCI4();
+
+            echo "Step 4/13: Migrating controllers...\n";
             $this->migrateControllers();
+
+            echo "Step 5/13: Migrating models...\n";
             $this->migrateModels();
+
+            echo "Step 6/13: Migrating views...\n";
             $this->migrateViews();
+
+            echo "Step 7/13: Migrating config files...\n";
             $this->migrateConfig();
+
+            echo "Step 8/13: Migrating routes...\n";
             $this->migrateRoutes();
+
+            echo "Step 9/13: Migrating helpers...\n";
             $this->migrateHelpers();
+
+            echo "Step 10/13: Migrating libraries...\n";
             $this->migrateLibraries();
+
+            echo "Step 11/13: Creating namespaces...\n";
             $this->createNamespaces();
+
+            echo "Step 12/13: Updating composer.json...\n";
             $this->updateComposerJson();
+
+            echo "Step 13/13: Setting up environment...\n";
             $this->setupEnvironment();
 
             // Restore error reporting
             error_reporting(E_ALL);
 
-            echo "\nMigration completed successfully! Your new CI4 project is at: {$this->targetPath}\n";
+            echo "\n✓ Migration completed successfully!\n";
+            echo "Your new CI4 project is at: {$this->targetPath}\n";
         } catch (\Exception $e) {
-            echo "\nError during migration: " . $e->getMessage() . "\n";
+            echo "\n✗ Error during migration: " . $e->getMessage() . "\n";
             // Clean up if needed
             if (file_exists($this->targetPath)) {
                 $this->filesystem->remove($this->targetPath);
