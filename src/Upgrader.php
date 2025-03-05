@@ -61,14 +61,18 @@ class Upgrader
     private function updateProgress(string $message): void
     {
         $this->currentStep++;
-        $percentage = round(($this->currentStep / $this->totalSteps) * 100);
+        $percentage = (int) round(($this->currentStep / $this->totalSteps) * 100);
+        $barWidth = 50;
+        $progressWidth = (int) round(($percentage / 100) * $barWidth);
+
         echo sprintf(
             "\r[%s>%s] %d%% %s",
-            str_repeat("=", $percentage / 2),
-            str_repeat(" ", 50 - ($percentage / 2)),
+            str_repeat("=", $progressWidth),
+            str_repeat(" ", $barWidth - $progressWidth),
             $percentage,
             $message
         );
+
         if ($this->currentStep === $this->totalSteps) {
             echo "\n";
         }
