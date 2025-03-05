@@ -8,7 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use CI\Upgrader\Upgrader;
+use GeorgeChitechi\Upgrader\Upgrader;
 
 class UpgradeCommand extends Command
 {
@@ -31,10 +31,10 @@ class UpgradeCommand extends Command
 
         try {
             $output->writeln('<info>Starting upgrade process...</info>');
-            
+
             $upgrader = new Upgrader($path);
             $upgrader->upgrade();
-            
+
             $output->writeln('<info>Upgrade completed successfully!</info>');
             return Command::SUCCESS;
         } catch (\Exception $e) {
@@ -46,4 +46,4 @@ class UpgradeCommand extends Command
 
 $application = new Application('CodeIgniter Upgrader', '1.0.0');
 $application->add(new UpgradeCommand());
-$application->run(); 
+$application->run();

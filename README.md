@@ -5,7 +5,7 @@ This package helps you upgrade your CodeIgniter 3 projects to CodeIgniter 4. It 
 ## Installation
 
 ```bash
-composer require ci/upgrader
+composer require georgechitechi/upgrader
 ```
 
 ## Usage
@@ -19,28 +19,33 @@ vendor/bin/ci-upgrade /path/to/your/ci3/project
 The upgrader handles the following aspects of the migration:
 
 1. Project Structure
-   - Creates the new CI4 directory structure
-   - Moves files to their new locations
+   - Downloads latest CI4 installation
+   - Creates proper directory structure
    - Creates a backup of your original project
 
 2. Controllers
    - Adds namespaces
    - Updates class extensions
    - Updates method visibility
+   - Converts CI3 syntax to CI4
 
 3. Models
    - Adds namespaces
    - Updates class extensions
    - Updates method visibility
+   - Adds CI4 model properties
 
 4. Views
    - Migrates to the new location
    - Updates echo syntax
+   - Updates form helper syntax
+   - Updates URL helper syntax
 
 5. Configuration
    - Converts config arrays to classes
    - Updates config file structure
    - Migrates database configuration
+   - Sets up environment file
 
 6. Routes
    - Updates routing syntax
@@ -49,10 +54,12 @@ The upgrader handles the following aspects of the migration:
 7. Helpers and Libraries
    - Adds namespaces
    - Updates file locations
+   - Updates syntax to CI4 standards
 
 8. Composer Configuration
    - Creates/updates composer.json
    - Sets up autoloading
+   - Preserves existing dependencies
 
 ## Important Notes
 
@@ -81,6 +88,10 @@ The upgrader handles the following aspects of the migration:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Author
+
+George Chitechi <georgechitechi@gmail.com>
 
 ## License
 

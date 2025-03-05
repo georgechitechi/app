@@ -1,12 +1,12 @@
 {
-    "name": "ci/upgrader",
+    "name": "georgechitechi/upgrader",
     "description": "A tool to upgrade CodeIgniter 3 projects to CodeIgniter 4",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "CI Upgrader",
-            "email": "upgrader@codeigniter.com"
+            "name": "George Chitechi",
+            "email": "georgechitechi@gmail.com"
         }
     ],
     "minimum-stability": "stable",
@@ -22,12 +22,12 @@
     },
     "autoload": {
         "psr-4": {
-            "CI\\Upgrader\\": "src/"
+            "GeorgeChitechi\\Upgrader\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "CI\\Upgrader\\Tests\\": "tests/"
+            "GeorgeChitechi\\Upgrader\\Tests\\": "tests/"
         }
     },
     "bin": [

@@ -1,6 +1,6 @@
 <?php
 
-namespace CI\Upgrader;
+namespace GeorgeChitechi\Upgrader;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
