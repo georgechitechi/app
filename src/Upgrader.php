@@ -12,6 +12,7 @@ class Upgrader
     private $backupPath;
     private $targetPath;
     private $ci4Version = '4.4.3'; // Latest stable version
+    private $modelMap = []; // Add modelMap property
 
     // Common CI3 to CI4 method name mappings
     private $methodMappings = [
@@ -153,7 +154,17 @@ class Upgrader
         // Update database settings from CI3
         $ci3DbConfig = $this->sourcePath . '/application/config/database.php';
         if (file_exists($ci3DbConfig)) {
+            // Save current error reporting level
+            $errorReporting = error_reporting();
+            // Temporarily disable warnings
+            error_reporting(E_ALL & ~E_WARNING);
+
+            // Include the database config file
             include $ci3DbConfig;
+
+            // Restore error reporting
+            error_reporting($errorReporting);
+
             if (isset($db['default'])) {
                 $envContent = preg_replace(
                     '/database.default.hostname = .*/',
