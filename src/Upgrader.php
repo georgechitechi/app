@@ -227,20 +227,35 @@ class Upgrader
             // Add use statements
             $content = $this->addUseStatement($content, 'CodeIgniter\Controller');
 
+            // Add model use statements based on usage
+            if (isset($this->modelMap)) {
+                foreach ($this->modelMap as $oldName => $newName) {
+                    if (strpos($content, $oldName) !== false) {
+                        $content = $this->addUseStatement($content, 'App\\Models\\' . $newName);
+                    }
+                }
+            }
+
             // Update class extension
             $content = str_replace('extends CI_Controller', 'extends BaseController', $content);
 
             // Update method visibility
-            $content = preg_replace('/function\s+/', 'public function ', $content);
+            $content = preg_replace('/(?<!public\s|private\s|protected\s)function\s+/', 'public function ', $content);
 
-            // Update model references to use new names
+            // Update model references to use static calls
             if (isset($this->modelMap)) {
                 foreach ($this->modelMap as $oldName => $newName) {
-                    // Update model loading
+                    // Remove model loading statements
                     $content = preg_replace(
                         '/\$this->load->model\([\'"]' . preg_quote($oldName, '/') . '[\'"]\);/',
-                        'use App\\Models\\' . $newName . ';' . PHP_EOL .
-                        '        $this->' . strtolower($newName) . ' = new ' . $newName . '();',
+                        '',
+                        $content
+                    );
+
+                    // Update model references to use static calls
+                    $content = preg_replace(
+                        '/\$this->' . preg_quote($oldName, '/') . '->/',
+                        $newName . '::',
                         $content
                     );
                 }
@@ -248,9 +263,6 @@ class Upgrader
 
             // Update CI3 syntax to CI4
             $content = $this->updateCI3Syntax($content);
-
-            // Add BaseController properties
-            $content = $this->addBaseControllerProperties($content);
 
             // Save to new location
             $targetFile = $this->targetPath . '/app/Controllers/' . $file->getFilename();
@@ -267,17 +279,17 @@ class Upgrader
             $content
         );
 
-        // Update model loading
+        // Remove model loading as we're using static calls now
         $content = preg_replace(
             '/\$this->load->model\([\'"](.+?)[\'"]\);/',
-            '$this->$1 = new \\App\\Models\\$1();',
+            '',
             $content
         );
 
         // Update library loading
         $content = preg_replace(
             '/\$this->load->library\([\'"](.+?)[\'"]\);/',
-            '$this->$1 = new \\App\\Libraries\\$1();',
+            'use App\\Libraries\\$1;',
             $content
         );
 
@@ -413,9 +425,9 @@ EOT;
             // Add namespace
             $content = $this->addNamespace('App\Models', $content);
 
-            // Update class name
+            // Update class name and extension
             $content = preg_replace(
-                '/class\s+' . $className . '\s+extends\s+CI_Model/',
+                '/class\s+' . preg_quote($className, '/') . '\s+extends\s+CI_Model/',
                 'class ' . $newClassName . ' extends Model',
                 $content
             );
@@ -423,11 +435,33 @@ EOT;
             // Add use statement for Model class
             $content = $this->addUseStatement($content, 'CodeIgniter\Model');
 
-            // Update method visibility
-            $content = preg_replace('/function\s+/', 'public function ', $content);
+            // Fix duplicate public visibility
+            $content = preg_replace('/public\s+public\s+function/', 'public function', $content);
+
+            // Add public visibility to methods that don't have any visibility
+            $content = preg_replace('/(?<!public\s|private\s|protected\s)function\s+/', 'public function ', $content);
 
             // Add model properties
-            $content = $this->addModelProperties($content);
+            $modelProperties = <<<'EOT'
+
+    protected $table;
+    protected $primaryKey = 'id';
+    protected $useAutoIncrement = true;
+    protected $returnType = 'array';
+    protected $useSoftDeletes = false;
+    protected $allowedFields = [];
+    protected $useTimestamps = false;
+    protected $createdField = 'created_at';
+    protected $updatedField = 'updated_at';
+    protected $deletedField = 'deleted_at';
+
+EOT;
+            // Add properties after class declaration
+            $content = preg_replace(
+                '/(class\s+' . preg_quote($newClassName, '/') . '\s+extends\s+Model\s*{)/',
+                "$1" . $modelProperties,
+                $content
+            );
 
             // Update database methods
             $content = $this->updateDatabaseQueries($content);
