@@ -1,0 +1,36 @@
+{
+    "name": "ci/upgrader",
+    "description": "A tool to upgrade CodeIgniter 3 projects to CodeIgniter 4",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "CI Upgrader",
+            "email": "upgrader@codeigniter.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^7.4|^8.0",
+        "symfony/console": "^5.4|^6.0",
+        "symfony/filesystem": "^5.4|^6.0",
+        "symfony/finder": "^5.4|^6.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0",
+        "squizlabs/php_codesniffer": "^3.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "CI\\Upgrader\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CI\\Upgrader\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/ci-upgrade"
+    ]
+}

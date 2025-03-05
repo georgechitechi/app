@@ -1,0 +1,49 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use CI\Upgrader\Upgrader;
+
+class UpgradeCommand extends Command
+{
+    protected static $defaultName = 'upgrade';
+
+    protected function configure()
+    {
+        $this
+            ->setDescription('Upgrade a CodeIgniter 3 project to CodeIgniter 4')
+            ->addArgument(
+                'path',
+                InputArgument::REQUIRED,
+                'Path to the CodeIgniter 3 project'
+            );
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $path = $input->getArgument('path');
+
+        try {
+            $output->writeln('<info>Starting upgrade process...</info>');
+            
+            $upgrader = new Upgrader($path);
+            $upgrader->upgrade();
+            
+            $output->writeln('<info>Upgrade completed successfully!</info>');
+            return Command::SUCCESS;
+        } catch (\Exception $e) {
+            $output->writeln('<error>' . $e->getMessage() . '</error>');
+            return Command::FAILURE;
+        }
+    }
+}
+
+$application = new Application('CodeIgniter Upgrader', '1.0.0');
+$application->add(new UpgradeCommand());
+$application->run(); 
