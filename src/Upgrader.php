@@ -171,39 +171,51 @@ class Upgrader
         // Update database settings from CI3
         $ci3DbConfig = $this->sourcePath . '/application/config/database.php';
         if (file_exists($ci3DbConfig)) {
-            // Create a temporary file with modified content
-            $tempConfig = "<?php\n" . preg_replace('/defined\(.*?\)\s*OR\s*exit\([^\)]+\);/', '', file_get_contents($ci3DbConfig));
-            $tempFile = tempnam(sys_get_temp_dir(), 'ci3_db_config');
-            file_put_contents($tempFile, $tempConfig);
+            // Read the database config file
+            $dbConfig = file_get_contents($ci3DbConfig);
 
-            // Include the temporary file
-            $db = [];
-            include $tempFile;
+            // Remove the CI3 direct script access check
+            $dbConfig = preg_replace('/defined\(.*?\)\s*OR\s*exit\([^\)]+\);/', '', $dbConfig);
 
-            // Clean up
-            unlink($tempFile);
+            // Extract database settings using regex
+            if (preg_match('/\$db\[\'default\'\]\s*=\s*array\s*\((.*?)\);/s', $dbConfig, $matches)) {
+                $dbSettings = $matches[1];
 
-            if (isset($db['default'])) {
-                $envContent = preg_replace(
-                    '/database.default.hostname = .*/',
-                    'database.default.hostname = ' . $db['default']['hostname'],
-                    $envContent
-                );
-                $envContent = preg_replace(
-                    '/database.default.database = .*/',
-                    'database.default.database = ' . $db['default']['database'],
-                    $envContent
-                );
-                $envContent = preg_replace(
-                    '/database.default.username = .*/',
-                    'database.default.username = ' . $db['default']['username'],
-                    $envContent
-                );
-                $envContent = preg_replace(
-                    '/database.default.password = .*/',
-                    'database.default.password = ' . $db['default']['password'],
-                    $envContent
-                );
+                // Extract individual settings
+                preg_match('/\'hostname\'\s*=>\s*\'([^\']+)\'/', $dbSettings, $hostname);
+                preg_match('/\'database\'\s*=>\s*\'([^\']+)\'/', $dbSettings, $database);
+                preg_match('/\'username\'\s*=>\s*\'([^\']+)\'/', $dbSettings, $username);
+                preg_match('/\'password\'\s*=>\s*\'([^\']+)\'/', $dbSettings, $password);
+
+                // Update .env file with extracted settings
+                if (!empty($hostname[1])) {
+                    $envContent = preg_replace(
+                        '/database.default.hostname = .*/',
+                        'database.default.hostname = ' . $hostname[1],
+                        $envContent
+                    );
+                }
+                if (!empty($database[1])) {
+                    $envContent = preg_replace(
+                        '/database.default.database = .*/',
+                        'database.default.database = ' . $database[1],
+                        $envContent
+                    );
+                }
+                if (!empty($username[1])) {
+                    $envContent = preg_replace(
+                        '/database.default.username = .*/',
+                        'database.default.username = ' . $username[1],
+                        $envContent
+                    );
+                }
+                if (!empty($password[1])) {
+                    $envContent = preg_replace(
+                        '/database.default.password = .*/',
+                        'database.default.password = ' . $password[1],
+                        $envContent
+                    );
+                }
             }
         }
 
